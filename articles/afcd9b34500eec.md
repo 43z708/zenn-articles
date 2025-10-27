@@ -14,21 +14,13 @@ published_at: "2025-09-17 17:47"
 publication_name: "omakase"
 ---
 
-> > 本記事は、スマートフォンの生体認証からクラウドまで **TEE（Trusted Execution Environment）** を俯瞰します。  
-> > **Part 2** では、ブロックチェーンにおける実用例であるAutomata 1RPC と Unichain（Flashblocks）について深掘りします。  
-> > 記述は 2025-09-16 時点の公知情報に基づきます。
-
-## TL;DR
-
-- **TEE は CPU 内の隔離実行環境**。OS や root からも分離された領域で、機密データとコードを保護し、**リモート・アテステーション**で「正しいバイナリが想定どおりの設定で動いているか」を検証できる。
-- **スマートフォン**では、iOS の Secure Enclave や Android の TrustZone/TEE が **生体情報テンプレートをデバイス外に出さず**、アプリケーションや OS には**認証可否のみ**返す設計。
-- **AWS Nitro Enclaves** は EC2 上にネットワーク/ストレージ/対話なしのエンクレーブを作る。**親は Nitro ベース & vCPU 要件あり**。**親 OS は Linux/Windows 可、エンクレーブ OS は Linux のみ**。
-
----
+本記事は、ブロックチェーン領域でも最近聞くことの多い **TEE（Trusted Execution Environment）** について解説していきます。  
+**Part 2** では、ブロックチェーンにおける実用例の Automata 1RPC と Unichain（Flashblocks）について深掘りします。  
+記述は 2025-09-16 時点の公知情報に基づきます。
 
 ## 1. TEE とは
 
-**OS や root でもアクセス不可能なハードウェアレベルの隔離領域**を作り、以下の処理を安全に行う仕組み。
+TEE とは、**OS や root でもアクセス不可能なハードウェアレベルの隔離領域を作り、以下の処理を安全に行う仕組み**のことです。
 
 1. 機密データの保管
 2. 暗号演算や認証処理
@@ -36,15 +28,19 @@ publication_name: "omakase"
 
 Arm TrustZone、Intel SGX/TDX、AMD SEV-SNP など形式は色々ありますが、共通点は「**鍵を握るロジック＋メモリが常に暗号化され、ホスト OS からは覗けない**」ことです。
 
-- **できること**
+- TEE を使ってできること
   - CPU 内の隔離領域でコードとデータを実行・保持
   - **リモート・アテステーション**による**バイナリ測定値（ハッシュ）＋設定**の検証
   - 鍵・シークレットの安全な取り扱い（TEE 外へ生データを出さない前提設計）
+    など。
 
-- **できない／気をつけること**
+- TEE では実現できない／気をつけること。
   - ハードウェア依存の脆弱性を**ゼロ**にはできない（サイドチャネル攻撃のリスク）
   - 正しさの根拠は**ハードウェア＋ファームウェアの信頼**に依存（暗号学的完結ではない）
   - 証明の粒度は「**このコードがこの設定で TEE 内にて走った**」まで（計算結果の**数学的完全性**は ZK の領域）
+    などがあります。
+
+ではどのような具体例があるのでしょうか。
 
 ---
 
@@ -60,15 +56,21 @@ Arm TrustZone、Intel SGX/TDX、AMD SEV-SNP など形式は色々ありますが
   - TrustZone/TEE で**生体データの取り扱いを分離**。
   - 認証可否のみがアプリケーション層へ渡る。テンプレートは TEE 領域で管理。
 
-> ポイント：**テンプレートや秘密鍵は TEE 外へ出さない**こと。アプリケーション設計では「**可否フラグ**」を前提に UX を組むことになります。
+ポイントは**テンプレートや秘密鍵は TEE 外へ出さない**ことです。
+アプリケーション設計では「**可否フラグ**」を前提に UX を組むことになり、パスワード認証などと比べても堅牢なセキュリティといえます。
 
 ---
 
 ## 3. AWS Nitro Enclaves 概要
 
-AWS Nitro Enclaves とは EC2 インスタンス内に Enclave と呼ばれる分離されたアプリケーション環境を作成するための機能のことで、TEE の実装が可能です。
+では、TEE を使ったアプリケーション開発において有力候補の AWS Nitro Enclaves について簡単に紹介します。
+※なお、AWS Nitro Enclaves は FHE 領域におけるリーディングカンパニーの [Zama ProtocolのKMS Nodeにも採用](https://docs.zama.ai/protocol/protocol/overview/kms#secure-execution-environments)されています。
 
-### 3.1 前提
+AWS Nitro Enclaves とは EC2 インスタンス内に Enclave と呼ばれる分離されたアプリケーション環境を作成するための機能のことで、簡単に TEE を実装可能です。
+
+### 3.1 前提知識
+
+AWS Nitro Enclaves を設定したい場合、 EC2 インスタンスを作成する際のオプションにて Nitro Enclave を有効化するだけです。
 
 - EC2（親）上に、**ネットワークなし／ストレージなし／SSH なし**の極小 OS（Linux）の **Enclave VM** を起動。
 - データの**加工・復号・署名**など「見せたくない処理」をエンクレーブ内で完結。
@@ -81,19 +83,31 @@ AWS Nitro Enclaves とは EC2 インスタンス内に Enclave と呼ばれる�
 - エンクレーブ OS：**Linux のみ**
 - 通信：**vsock**（親⇔エンクレーブのみ）
 
-**Nitro Enclaves アーキテクチャ**
+### 3.3 Nitro Enclaves アーキテクチャ
+
 AWS Nitro Enclaves では、EC2 Instance と Nitro Enclave 間の疎通を vsock という通信のみで行います。
 
 ![Nitro Enclaves アーキテクチャ](/images/afcd9b34500eec/nitro-enclaves-architecture.png)
 
-### 3.3 アテステーションの流れ
+### 3.4 アテステーションとは
+
+それでは、データの**加工・復号・署名**など「見せたくない処理」をエンクレーブ内で完結できたということをどのように保障するのでしょうか？
+外部サービスからすると、本当にエンクレーブ内のみで完結しているのかを直接知る方法はありません。
+
+そのため、外部サービスが「このエンクレーブは期待したコード／設定で起動し、改ざんされていない」と判断できるようにする仕組みが必要です。
+それが"アテステーション"です。
+アテステーションはエンクレーブが"自らの正当性を証明し、外部サービスとの信頼を築く"ための仕組みといえます。
+
+### 3.5 アテステーションの流れ
+
+では具体的なアテステーションの流れをみていきましょう。
 
 1. Nitro Hypervisor が署名付きアテステーション文書をエンクレーブ内からの要求に応じて生成
 2. 文書には PCR（Platform Configuration Register）等の測定値を含む
-3. Verifier（KMS など）が文書の署名・ナンス・PCR 適合を検証 → OK なら秘密を開示
-   ※ PCR (Platform Configuration Register)」とは、プラットフォーム構成レジスタといい、enclave に固有な暗号化測定値です。基本的に PCR は enclave の作成時に自動的に生成され、作成後 enclave に変更が加えられていないことを外部から検証できるようにするためのものです。
+3. Verifier（KMS など）が文書の署名・ナンス・PCR 適合を検証
+4. 条件を満たせば、Verifier が KMS の場合は Decrypt/GenerateDataKey/GenerateRandom などの結果を文書内の公開鍵で暗号化して返すため、平文はエンクレーブ外へ出ない
 
-#### Nitro Enclaves のリモート・アテステーション
+※ PCR (Platform Configuration Register)」とは、プラットフォーム構成レジスタといい、enclave に固有な暗号化測定値です。基本的に PCR は enclave の作成時に自動的に生成され、作成後 enclave に変更が加えられていないことを外部から検証できるようにするためのものです。
 
 ```mermaid
 sequenceDiagram
@@ -133,7 +147,7 @@ sequenceDiagram
 
 ### 3.4 単体 EC2 で Nitro Enclaves を有効化（最小構成）するterraform例
 
-弊社 Omakase はブロックチェーンバリデータ運用を事業の軸としており、原則すべてのインフラを IaC で管理しているので、以下 terraform での実装例を紹介します。
+弊社 Omakase はブロックチェーンバリデータ運用を事業の軸としており、原則すべてのインフラを IaC で管理しています。以下我々が terraform で実装する場合の参考を紹介します。
 
 ```hcl
 
