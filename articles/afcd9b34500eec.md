@@ -132,7 +132,7 @@ sequenceDiagram
     end
 ```
 
-#### 代表的な PCR（短縮版）
+※ 代表的な PCR（短縮版）
 
 | PCR  | 内容（要約）                     |
 | ---- | -------------------------------- |
@@ -145,7 +145,7 @@ sequenceDiagram
 
 ---
 
-### 3.4 単体 EC2 で Nitro Enclaves を有効化（最小構成）するterraform例
+### 3.6 単体 EC2 で Nitro Enclaves を有効化（最小構成）するterraform例
 
 弊社 Omakase はブロックチェーンバリデータ運用を事業の軸としており、原則すべてのインフラを IaC で管理しています。以下我々が terraform で実装する場合の参考を紹介します。
 
@@ -194,7 +194,7 @@ resource "aws_instance" "enclave_parent" {
 
 ```
 
-### 3.5 EKS で Nitro Enclaves を有効化（最小構成）するterraform例
+### 3.7 EKS で Nitro Enclaves を有効化（最小構成）するterraform例
 
 ```hcl
 
