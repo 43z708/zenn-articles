@@ -1,154 +1,138 @@
 ---
 title: "TEE（Trusted Execution Environment）入門[ブロックチェーンへの応用例編]"
 emoji: "🗂"
-topics: []
+type: "idea"
+topics: ["TEE", "ブロックチェーン", "Unichain"]
 published: false
 ---
 
----
-
-<!-- textlint-disable -->
-
-## Part 2：Automata 1RPC / Unichain（Flashblocks）徹底解説
-
-> 本記事は **Part 2**。TEE の基礎は Part 1 を参照。  
-> ここでは **Automata 1RPC** と **Unichain（Rollup-Boost/Flashblocks）** を、ブロックチェーン未経験の読者にも分かるように分解します。
-
-## 0. ざっくり要約
-
-- **Automata 1RPC**：TEE を用いて **クライアントのメタデータ（IP/UA/時刻等）を TEE 内で最小化**し、安全に複数チェーンへリレーする設計。
-- **Unichain（Flashblocks）**：**TEE 内ブロックビルド**＋**200–250ms サブブロック**で、UX（高速）と**順序の検証可能性**を両立。MEV 公平性や revert-protection に寄与。
+TEE とは、[前回のTEE（Trusted Execution Environment）入門[基礎編]で解説](https://zenn.dev/omakase/articles/afcd9b34500eec)したとおり、OS や root でもアクセス不可能なハードウェアレベルの隔離領域を作り、機密データの保管、暗号演算や認証処理、証明書付きの起動検証を安全に行う仕組みのことです。
+今回の記事では、ブロックチェーンに応用した例として、**Automata 1RPC** と **Unichain（Rollup-Boost/Flashblocks）** について、その仕組みを解説します。
 
 ---
 
-## 1. 前提：ブロックチェーン超入門（最短版）
+## 1. Automata 1RPC：プライバシー重視の RPC リレー
 
-- **L1 / L2**：L2 は L1（例：Ethereum）に最終性やデータ可用性を寄せ、**コスト/速度/UX**を最適化する実装（Optimistic/ZK 等）
-- **Sequencer**：L2 で Tx を**順序付けて**ブロックにまとめる役
-- **Block Builder**：Tx を選別・並べ替え・バンドル化（MEV の論点が絡む）
-- **MEV（Maximal Extractable Value）**：注文の並びや含め方によって生じる価値。**フロントラン／サンドイッチ**が代表例
+### 1.1 既存のRPCの役割と問題点
 
----
+- 通常の RPC では、IP アドレスやウォレットアドレスなどが RPC プロバイダに収集されるリスクがある点を記述する。
+- 仮に IP アドレスとウォレットアドレスの紐づけ情報がハッカーに漏洩した場合、攻撃の対象となってしまうリスクが高まるなどの危険性を記述する。
+- 自身でフルノードを構築して自前の RPC でブロックチェーンにアクセス可能だが、コスト面や技術的難易度から現実的ではない点を記述する。
 
-## 2. Automata 1RPC：プライバシー重視の RPC リレー
+### 1.2 1RPC のアーキテクチャ ※この章は原文案
 
-### 2.1 問題設定
-
-- 通常の RPC では、**IP・UA・時刻・位置情報のヒント**などが **相手ノードや中継事業者に露出**し得る。
-- とくにウォレットやアプリの初期化・署名要求・残高照会などは、**行動履歴の推測**につながる。
-
-### 2.2 1RPC の基本設計
+**Automata 1RPC とは、クライアントより送られた TX リクエストからメタデータ（IP/UA/時刻等）をフィルタリングしてRPC Providerにリクエストを受け渡すリレイヤーのことです。**
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'fontSize': '16px'}}}%%
 sequenceDiagram
     autonumber
     participant Wallet as Wallet / DApp
     participant TEE as 1RPC（TEE Relay）
-    participant Node as Upstream Node(s)
-    participant AttV as Attestation Verifier
+    participant Att as Trusted Attestors<br/>(Attestation Verifier)
+    participant Reg as On-chain Registry<br/>(Verax / Automata Chain)
+    participant Prov as RPC Provider(s)
 
-    Wallet->>TEE: TLS + JSON-RPC
-    TEE-->>AttV: アテステーション提示（PCR/測定値）
-    AttV-->>TEE: 検証OK / ポリシー許可
+    Wallet->>TEE: (1) TLS + JSON-RPC リクエスト
+    TEE-->>Att: (2) アテステーション提示<br/>(例: DCAP Quote)
+    Att-->>TEE: (3) 検証OK / ポリシー許可<br/>(コンセンサス型)
+    Att-->>Reg: (4) 検証結果/メタ情報を<br/>オンチェーン記録（PoM等）
 
-    TEE->>TEE: メタデータ最小化（IP/UA/時刻 等のマスク）
-    TEE->>Node: 再TLS（必要最小のヘッダ）
-    Node-->>TEE: レスポンス
-    TEE-->>Wallet: レスポンス（メタデータ漏洩なし）
+    TEE->>TEE: (5) メタデータ最小化<br/>(IP/UA/時刻のマスク/正規化)
+    TEE->>Prov: (6) 新規TLSでRPC送信<br/>(プライバシー保持)
+    Prov-->>TEE: (7) レスポンス
+    TEE-->>Wallet: (8) レスポンス（メタデータ露出なし）
+
 ```
 
-TEE（SGX/TDX/Nitro 等）内でマスキング・正規化・最小化を実施
+1. Wallet → 1RPC に接続
+   クライアントは TLS で 1RPC に接続し、JSON-RPC を送ります。つまり、1RPC はクライアントと RPC providers の間に入る TEE プロキシです。
 
-アテステーション検証を通すことで、クライアントは「期待した測定値の TEE 内で処理」を確認
+2. TEE がアテステーション提示
+   1RPC の TEE は、ハード／ソフトの測定値（例：Intel DCAP の Quote など）を提示します。ここで「どのバイナリが、どんな設定で、どの TEE 上で動いているか」を示します。
 
-マルチチェーン対応：1 エンドポイントで複数ネットワークにリレー（内部で振り分け）
+3. Trusted Attestors が検証・許可
+   **第三者の検証者集合（Trusted Attestors）**が、その測定値をポリシーに従って検証し、合否（許可／拒否）を TEE に返します。オンチェーンでのフル検証は高コストになりやすいため、まずオフチェーンで合意を取る段階です。
 
-### 2.3 メタデータ最小化の具体例
+4. オンチェーン記録（PoM/レジストリ）
+   検証結果や関連メタ情報は、オンチェーンのレジストリ（例：Verax、あるいは実装により Automata Chain 等）へ記録できます。これにより、第三者が後から検証可能になります。
 
-削除：グローバル IP、XFF、詳細 UA 文字列、細粒度のタイムスタンプ
+5. TEE 内でメタデータ最小化
+   IP / UA / タイミングなど、識別に使われやすい情報を TEE 内でマスク／正規化します。オペレータが保存しない、RPC providers にも渡さないことを前提に処理します。
 
-正規化：UA を大分類（OS/ブラウザのメジャー系列）だけに
+6. TEE → RPC Provider に再 TLS で中継
+   外部の RPC Provider(s) へは新しい TLS セッションでリクエストを転送します。プロバイダ側からは、最小化後の情報しか見えません。
 
-パディング：リクエスト長・タイミングに一定の揺らぎを入れる（観測耐性）
+7. Provider から TEE へ応答
+   RPC Provider からのレスポンスを TEE が受け取ります。
 
-実装上の勘所：監査ログは TEE 外に出る。何を残すか（匿名化・集約）を事前に設計。
+8. TEE → Wallet へ返却（漏洩なし）
+   受け取った結果をクライアントに返します。メタデータの露出は抑制されたままです。
 
-### 2.4 信頼と限界
+### 1.3 TEEの限界
 
-1RPC は TEE の信頼に依存。サイドチャネルや TCB のアップデートに伴う再アテステーションが前提。
+- 1RPC は TEE の信頼に依存。TEE 依存：サイドチャネル・マイクロコード・ファームウェア更新のリスクについて言及する。
 
-「誰が検証するか？」——自前検証（ウォレット・ゲートウェイ）／外部のアテステーション・レジストリ活用など。
+- ビタリックも言及している PIR が将来的な解決になるかもという旨を言及する。
+  <https://defire.jp/what-is-importance-of-pir/>
+  <https://ethereum-magicians.org/t/a-maximally-simple-l1-privacy-roadmap/23459>
 
-## 3. Unichain（Rollup-Boost / Flashblocks）：TEE ブロックビルド
+## 2. Unichain（Rollup-Boost / Flashblocks）：TEE ブロックビルド
 
-### 3.1 何が新しい？
+### 2.1 なぜUnichainというL2が構築されたのか
 
-Sequencer-Builder 分離の文脈で、Block Builder を TEE 内で動かす。
+- 既存の uniswap、L2 における課題点である流動性の断片化などについてできれば具体的な数字も交えながら触れる
+- <https://docs.unichain.org/docs> で記載された内容に基づいて Unichain とは何かを概要説明する
 
-200–250ms のサブブロック（Flashblocks）を TEE 内で作り、1 秒ブロックを構成。
+### 2.2 Unichainのアーキテクチャ
 
-効果：低レイテンシ UX と順序の検証可能性（透明なルール＋アテステーション）を両立。
+- tx が処理されていくフロー図をもとに各処理に関して細かく説明していく
+- 単一の OP sequencer が Rollup-Boost というサイドカーを使って外部 TEE Block Builder にブロック構築を外注している点を説明
+- その TEE attestation を外部公開することで（現在は非公開っぽい）、正しいバイナリ・ロジックで実行されていることを担保している点を説明
+- 単一 sequencer のブロック構築を UVN で検証することで分散化している点について述べる
 
-### 3.2 どんな「公正さ」が担保される？
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'fontSize': '16px'}}}%%
+sequenceDiagram
+  autonumber
+  participant U as User
+  box Rollup-BoostでBuilderに指示
+    participant S as Sequencer
+    participant B as TEE Builder
+  end
+  participant V as UVN Validators
+  participant C as UVN Service (on Unichain)
 
-ルールの公開性：優先度（例：手数料／タイムスタンプの扱い等）を検証可能に
+  U->>S: (1) TX 送信
+  S->>B: (2) ブロックビルド要求
+  B->>B: (3) Priority ordering & Revert除去（TEE内）
+  B-->>S: (4) Flashblocks配信 / ブロック提案
+  B->>B: (5) TEE実行attestationを公開
+  S-->>U: (6) ≈200–250ms preconf
+  S-->>V: (7) L2ペイロード配布
+  V->>C: (8) ブロックattestation投稿
+  C-->>V: (9) 検証・報酬
 
-TEE のアテステーション：Builder バイナリと設定の**測定値（PCR）**で同一性を担保
+```
 
-再現性：同一入力 → 同一サブブロック（ルールに従う限り）
+### 2.3 Unichainの今後
 
-### 3.3 UVN（検証ネットワーク）・再最終性
+- WhitePaper に掲載された以下の今後の実装可能性について言及する。
 
-サブ秒の操作可能最終性（操作が巻き戻らない見込み）と、経済的最終性は別概念。
+- UVN
+  - 信頼性のある中立性：バリデーターはロールアップのメモリプールを監視し、トランザクションが適時に含まれていることを保証できる。
+  - 投稿制限：BatchPoster 契約は、特定の証明ウェイトを要求してからブロックを含めることができ、これによりシーケンサーが特定のルールに従わないブロックを投稿する能力を効果的に制限しする。
 
-L1 への投稿・フォールト証明の流れと合わせ、ユーザ体験上の確度を上げる。
+- TEE Block Builder
+  - 暗号化メモプール：ユーザーはトランザクションを暗号化でき、取引前のプライバシーを強化できる。
+  - スケジュール済みトランザクション：TEE をプログラムし、ユーザーやスマートコントラクトが自動トランザクションを送信できるようにすることで、スケジュールされたアクションや定期的なアクションを実行可能。
+  - TEE コプロセッサ：TEE により、スマートコントラクトがプライベートで検証可能な計算を要求できるようにする。
 
-### 3.4 脅威モデルと限界
-
-TEE 依存：サイドチャネル・マイクロコード・ファームウェア更新のリスク
-
-観測耐性：サブブロック窓に合わせたタイミング推測（流量調整・バッチング工夫が必要）
-
-実装進化中：仕様は継続更新されるため、断定表現を避ける／アテステーション公開を前提にする
-
-## 4. 開発者向けチェックリスト（1RPC / Unichain）
-
-アテステーション検証：誰がどのポリシーで検証するか（ウォレット／ゲートウェイ／コントラクト）
-
-測定値の公開：PCR セット、ビルド ID、コミットハッシュのディスクロージャ
-
-プライバシーモデル：メタデータの最小化ルール、匿名化、保持期間
-
-監査ログ：外部から個人再識別できないレベルでの観測に限定
-
-フォールト処理：アテステーション失敗時のフェイルクローズ、代替経路
-
-## 5. よくある質問（抜粋）
-
-Q. 1RPC を通してもノード側に何か漏れない？
-A. 1RPC 側の TEE で最小化・正規化した後に送る。ポリシーの公開とアテステーション検証が鍵。
-
-Q. Flashblocks の 200–250ms は固定？
-A. 実装・ネットワーク条件で最適値は変わり得る。目標レイテンシ帯と理解し、将来調整される可能性あり。
-
-Q. ZK と競合する？
-A. 競合ではなく補完。ZK は暗号学的検証、TEE は実時間処理と汎用性に強み。
+## 3. まとめ
 
 参考リンク（一次・準一次情報）
 
-1RPC（Overview / Docs）: <https://1rpc.io/>
-/ <https://docs.1rpc.io/>
-
-Flashbots：Rollup-Boost / Unichain Mainnet 記事
-
+<https://docs.ata.network/>
+<https://docs.unichain.org/docs>
 <https://writings.flashbots.net/introducing-rollup-boost>
-
 <https://writings.flashbots.net/unichain-mainnet>
-
-TEE 比較（ZK vs TEE の観点）: <https://oasis.net/blog/comparing-zkp-tee-privacy>
-
-Nitro Enclaves（測定値の概説）: <https://docs.ata.network/pom/attestation-module/machine-attestation/aws-nitro-enclaves>
-
-付録：用語集（Sequencer / Builder / MEV / 最終性 / DA / PCR / DCAP など）は必要があれば追記します。
-
-<!-- textlint-enable -->
