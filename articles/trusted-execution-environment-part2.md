@@ -3,7 +3,8 @@ title: "TEE（Trusted Execution Environment）入門[ブロックチェーンへ
 emoji: "🗂"
 type: "idea"
 topics: ["TEE", "ブロックチェーン", "Unichain", "RPC"]
-published: false
+published: true
+published_at: 2025-11-07 17:00
 ---
 
 TEE とは、[前回のTEE（Trusted Execution Environment）入門[基礎編]で解説](https://zenn.dev/omakase/articles/afcd9b34500eec)したとおり、OS や root でもアクセス不可能なハードウェアレベルの隔離領域を作り、機密データの保管、暗号演算や認証処理、証明書付きの起動検証を安全に行う仕組みのことです。
@@ -17,7 +18,7 @@ TEE とは、[前回のTEE（Trusted Execution Environment）入門[基礎編]�
 
 #### RPCの役割
 
-ウォレットや dApp は、JSON-RPC を介してノード機能（eth_sendRawTransaction、eth_getBalance など）にアクセスします。多くのユーザーは自前ノードではなく、Infura/Alchemy/QuickNode 等の第三者 RPC の HTTPS エンドポイントへ接続します。このとき RPC 事業者は TLS 終端でリクエスト本文を復号するため、**送信元 IP・メソッド・パラメータ（ウォレットアドレス等）**を観測・処理し得ます。実際に一部の事業者は IP とウォレットアドレス情報を収集しているので要注意です。
+ウォレットや dApp は、JSON-RPC を介してノード機能（eth_sendRawTransaction、eth_getBalance など）にアクセスします。多くのユーザーは自前ノードではなく、Infura/Alchemy/QuickNode 等の第三者 RPC の HTTPS エンドポイントへ接続します。このとき RPC 事業者は TLS 終端でリクエスト本文を復号するため、**送信元 IP・メソッド・パラメータ（ウォレットアドレス等）** を観測・処理し得ます。実際に一部の事業者は IP とウォレットアドレス情報を収集しているので要注意です。
 
 #### 問題点：IPとウォレットアドレスの収集リスク
 
@@ -27,7 +28,7 @@ TEE とは、[前回のTEE（Trusted Execution Environment）入門[基礎編]�
 
 プライバシー観点では「自前ノード＋自前 RPC」が理想ではありますが、コスト・運用工数の面で、個人が運用するには現実的ではありません。
 
-つまり、従来型の RPC は利便性の代償として IP やアドレスのメタデータ露出が避けにくく、自前運用はコストと SRE 難易度が高い――このギャップを埋めるために、**プライバシー重視の RPC リレー（Automata 1RPC）**の意義があります。
+つまり、従来型の RPC は利便性の代償として IP やアドレスのメタデータ露出が避けにくく、自前運用はコストと SRE 難易度が高い――このギャップを埋めるために、**プライバシー重視の RPC リレー（Automata 1RPC）** の意義があります。
 
 ### 1.2 1RPC のアーキテクチャ
 
@@ -64,7 +65,7 @@ sequenceDiagram
    1RPC の TEE は、ハードウェア／ソフトウェアの測定値（例：Intel DCAP の Quote など）を提示します。ここで「どのバイナリが、どんな設定で、どの TEE 上で動いているか」を示します。
 
 3. Trusted Attestors が検証・許可
-   **第三者の検証者集合（Trusted Attestors）**が、その測定値をポリシーに従って検証し、合否（許可／拒否）を TEE に返します。オンチェーンでのフル検証は高コストになりやすいため、まずオフチェーンで合意を取る段階です。
+   **第三者の検証者集合（Trusted Attestors）** が、その測定値をポリシーに従って検証し、合否（許可／拒否）を TEE に返します。オンチェーンでのフル検証は高コストになりやすいため、まずオフチェーンで合意を取る段階です。
 
 4. オンチェーン記録（PoM/レジストリ）
    検証結果や関連メタ情報は、オンチェーンのレジストリ（例：Verax、あるいは実装により Automata Chain 等）へ記録できます。これにより、第三者が後から検証可能になります。
@@ -93,17 +94,29 @@ Vitalik Buterin は [L1 プライバシーの短期ロードマップ](https://e
 
 ### 2.1 既存のRollupにおける課題
 
-L2・Rollup の現実として、流動性は少数チェーンに偏りつつ全体では断片化しています。たとえば 2025 年 10 月 31 日時点 [L2BEAT](https://l2beat.com/scaling/tvs) によると、L2 全体の TVS は約 $40.72B で、このうち Arbitrum One が ~$16.93B、Base が ~$14.91B を占め、上位 2 チェーンだけで大半を抱えています。一方で、OP Mainnet は ~$2.90B、Unichain は ~$0.52B 規模と分散しているのが現状です。
+L2・Rollup の現実として、流動性は少数チェーンに偏りつつ全体では断片化しています。たとえば 2025 年 11 月 6 日時点 [L2BEAT](https://l2beat.com/scaling/tvs) によると、L2 全体の TVS は約 $40B で、このうち Arbitrum One が $16.14B、Base が $14.22B を占め、上位 2 チェーンだけで大半を抱えています。一方で、OP Mainnet は $2.72B、Unichain は $0.455B 規模と分散しているのが現状です。
+
+![出典:L2BEAT](/images/trusted-execution-environment-part2/l2-tvl.png)
+
 ユーザーやアプリにとっては、チェーンをまたいだ取引や、小規模チェーンでの取引の UX が低下しています。
 
 また、「実行品質」もボトルネックとなっています。多くの Rollup はブロック提案時の固定オーバーヘッド（シリアライズや state root 生成）のためブロック時間の短縮化が本質的に難しく、特に混雑時は手数料・待ち時間が読みにくくなっています。
 
-こうした課題に対し Unichain は、OP Stack 上の Optimistic Rollup として二本柱でアプローチします。
-ひとつは "Verifiable Block Building" です。ブロック構築を TEE（初期実装は Intel TDX）内で行い、優先度順序（priority ordering）の強制やリバート保護（失敗 TX の事前除去）を実装、さらに実行アテステーションを公開して「このルールどおり TEE 内で実行した」ことを外部から検証可能にします。加えて "Flashblocks" により約 200ms 単位の preconfirm を発行し、レイテンシーを低下させます。
+こうした課題に対し Unichain は、OP Stack 上の Optimistic Rollup として以下の二本柱でアプローチします。
 
-もうひとつは Unichain Validation Network（UVN）です。バリデータは $UNI を L1 Ethereum にステークし、その状態は Unichain 上のスマートコントラクトで追跡。各エポックで**署名付きブロックハッシュ（ブロック・アテステーション）を Unichain の UVN Service に投稿し、検証と即時報酬によって単一シーケンサーのリスク（重複提案・無効ブロック）**を抑え、経済的ファイナリティを加速します。
+- Verifiable Block Building
+- Unichain Validation Network（UVN）
 
-さらに Unichain は**“ロールアップ横断の流動性アクセスのホーム”**になることを掲げています。OP Stack 系は Superchain Interoperability を活用し、その他チェーンには当面 Intents（UniswapX / ERC-7683）や既存ブリッジを組み合わせて実用接続、将来的には zk light client による連携も視野に入れています。
+#### Verifiable Block Building
+
+ブロック構築を TEE（初期実装は Intel TDX）内で行い、優先度順序（priority ordering）の強制やリバート保護（失敗 TX の事前除去）を実装、さらに実行アテステーションを公開して「このルールどおり TEE 内で実行した」ことを外部から検証可能にします。加えて "Flashblocks" により約 200ms 単位の preconfirm を発行し、レイテンシーを低下させます。
+
+#### Unichain Validation Network（UVN）
+
+バリデータは $UNI を L1 Ethereum にステークし、その状態は Unichain 上のスマートコントラクトで追跡。各エポックで**署名付きブロックハッシュ（ブロック・アテステーション）を Unichain の UVN Service に投稿し、検証と即時報酬によって単一シーケンサーのリスク（重複提案・無効ブロック）** を抑え、経済的ファイナリティを加速します。
+
+さらに Unichain は**ロールアップ横断の流動性アクセスのホーム**になることを掲げています。
+OP Stack 系は Superchain Interoperability を活用し、その他チェーンには当面 Intents（UniswapX / ERC-7683）や既存ブリッジを組み合わせて実用接続、将来的には zk light client による連携も視野に入れています。
 
 ### 2.2 Unichainのアーキテクチャ
 
@@ -163,7 +176,7 @@ UVN Service コントラクトがアテステーションを検証し、ステ�
 
 ### 2.3 Unichainの今後
 
-Unichain は、**検証可能なブロックビルド（TEE）と UVN（Unichain Validation Network）**を土台に、将来的に「監視 → 制御 → 機能拡張」の順で運用を強化していく方針を示しています。ここでは Whitepaper の Potential Future Work に記載された内容について説明します。
+Unichain は、**検証可能なブロックビルド（TEE）と UVN（Unichain Validation Network）** を土台に、将来的に「監視 → 制御 → 機能拡張」の順で運用を強化していく方針を示しています。ここでは Whitepaper の Potential Future Work に記載された内容について説明します。
 
 #### UVN：中立性の監視から、プロトコル的な抑止へ
 
