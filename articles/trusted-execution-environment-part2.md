@@ -37,7 +37,7 @@ TEE とは、[前回のTEE（Trusted Execution Environment）入門[基礎編]�
 TX リクエストが RPC Provider に受け渡され、レスポンスがかえってくるまでの処理フローを以下に記載しました。
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'fontSize': '16px'}}}%%
+%%{init: {'theme':'white', 'themeVariables': { 'fontSize': '16px'}}}%%
 sequenceDiagram
     autonumber
     participant Wallet as Wallet / DApp
@@ -124,7 +124,7 @@ OP Stack 系は Superchain Interoperability を活用し、その他チェーン
 具体的には以下です。
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': { 'fontSize': '16px'}}}%%
+%%{init: {'theme':'white', 'themeVariables': { 'fontSize': '16px'}}}%%
 sequenceDiagram
   autonumber
   participant U as User
