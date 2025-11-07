@@ -5,6 +5,7 @@ type: "idea"
 topics: ["TEE", "ブロックチェーン", "Unichain", "RPC"]
 published: true
 published_at: 2025-11-07 17:00
+publication_name: "omakase"
 ---
 
 TEE とは、[前回のTEE（Trusted Execution Environment）入門[基礎編]で解説](https://zenn.dev/omakase/articles/afcd9b34500eec)したとおり、OS や root でもアクセス不可能なハードウェアレベルの隔離領域を作り、機密データの保管、暗号演算や認証処理、証明書付きの起動検証を安全に行う仕組みのことです。
