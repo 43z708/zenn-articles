@@ -3,8 +3,9 @@ title: "【1.8億円の報酬損失】Ethereum Fusaka直後のPrysm障害に学�
 emoji: "🔖"
 type: "idea" # tech: 技術記事 / idea: アイデア
 topics: ["ethereum", "prysm", "web3signer", "ブロックチェーン", "Fusaka"]
-published: false
+published: true
 publication_name: omakase
+published_at: 2025-12-16 15:00
 ---
 
 ## はじめに
