@@ -11,7 +11,7 @@ publication_name: omakase
 
 Fusaka 実装直後に発生した Prysm の障害は、私たちノード運用者に「単一クライアント依存のリスク」と「誤った冗長化による Slashing の恐怖」を同時に突きつける出来事でした。
 
-CoinPost 等の事後分析によると、Prysm 側のバグによって参加率が最大 75%まで低下し、影響を受けたバリデータ群の合計で 382 ETH 相当もの報酬機会損失が発生したとされています。
+[Prysm Postmortems](https://prysm.offchainlabs.com/docs/misc/mainnet-postmortems/) の事後分析によると、Prysm 側のバグによって参加率が最大 75%まで低下し、影響を受けたバリデータ群の合計で 382 ETH 相当もの報酬機会損失が発生したとされています。
 
 この記事では、EL/CL/VC を複数構成にしつつ、署名を Web3Signer に集約して二重署名を防ぐための安全な設計について、運用者の視点で整理します。
 
@@ -90,10 +90,13 @@ Fusaka 直後の Prysm 障害は、クライアント多様性（Client Diversit
 
 ## 引用元
 
-[https://coinpost.jp/?p=674472](https://coinpost.jp/?p=674472)
-[https://blog.ethereum.org/2025/11/06/fusaka-mainnet-announcement](https://blog.ethereum.org/2025/11/06/fusaka-mainnet-announcement)
-[https://github.com/OffchainLabs/prysm/releases](https://github.com/OffchainLabs/prysm/releases)
-[https://docs.web3signer.consensys.io/concepts/slashing-protection](https://docs.web3signer.consensys.io/concepts/slashing-protection)
-[https://lighthouse-book.sigmaprime.io/advanced_web3signer.html](https://lighthouse-book.sigmaprime.io/advanced_web3signer.html)
-[https://eips.ethereum.org/EIPS/eip-3030](https://eips.ethereum.org/EIPS/eip-3030)
-[https://eips.ethereum.org/EIPS/eip-3076](https://eips.ethereum.org/EIPS/eip-3076)
+- Prysm Postmortems :contentReference[oaicite:22]{index=22}
+- Prysm Docs: Use Web3Signer :contentReference[oaicite:23]{index=23}
+- Lighthouse Book: Web3Signer :contentReference[oaicite:24]{index=24}
+- Teku Docs: Use Web3Signer :contentReference[oaicite:25]{index=25}
+- Nimbus Docs: External signer :contentReference[oaicite:26]{index=26}
+- Lodestar Docs: External signer :contentReference[oaicite:27]{index=27}
+- Consensys Web3Signer Docs: Architecture（slashing DB / DB locking）:contentReference[oaicite:28]{index=28}
+- CoinPost :contentReference[oaicite:21]{index=21}
+- Cointelegraph :contentReference[oaicite:29]{index=29}
+- Crypto.news :contentReference[oaicite:30]{index=30}
