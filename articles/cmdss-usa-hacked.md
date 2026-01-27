@@ -3,7 +3,8 @@ title: "米政府押収の暗号資産約60億円に流出疑惑 - 過去の監�
 emoji: "💵"
 type: "idea" # tech: 技術記事 / idea: アイデア
 topics: []
-published: false
+published: true
+published_at: 2026-01-27 18:00
 publication_name: omakase
 ---
 
