@@ -6,6 +6,7 @@
   "scripts": {
     "lint": "textlint --fix articles/** && markdownlint --fix articles/**",
     "lint-check": "textlint articles/** && markdownlint articles/**",
+    "lint:package-json": "pnpm exec npmPkgJsonLint .",
     "markdown-check": "markdown-link-check ./articles/** --config 'markdown-link-check.json'",
     "prepare": "husky",
     "create-article": "zenn new:article --publication-name omakase",
@@ -17,42 +18,49 @@
       "markdownlint --fix",
       "textlint --fix",
       "markdown-link-check --config 'markdown-link-check.json'"
+    ],
+    "package.json": [
+      "pnpm run lint:package-json"
     ]
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.18.0",
   "dependencies": {
-    "zenn-cli": "^0.2.3"
+    "zenn-cli": "0.2.3"
   },
   "devDependencies": {
-    "@proofdict/textlint-rule-proofdict": "^3.1.2",
-    "@textlint-ja/textlint-rule-no-synonyms": "^1.3.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.3",
-    "markdown-link-check": "^3.13.7",
-    "markdownlint-cli": "^0.45.0",
-    "prettier": "^3.6.2",
-    "sudachi-synonyms-dictionary": "^15.0.0",
-    "textlint": "^15.2.2",
-    "textlint-filter-rule-comments": "^1.2.2",
-    "textlint-rule-ja-hiragana-fukushi": "^1.3.0",
-    "textlint-rule-ja-hiragana-hojodoushi": "^1.1.0",
-    "textlint-rule-ja-hiragana-keishikimeishi": "^1.1.0",
-    "textlint-rule-ja-no-abusage": "^3.0.0",
-    "textlint-rule-ja-no-inappropriate-words": "^2.0.0",
-    "textlint-rule-ja-no-mixed-period": "^3.0.2",
-    "textlint-rule-ja-overlooked-typo": "^0.0.1",
-    "textlint-rule-ja-space-around-code": "^2.4.2",
-    "textlint-rule-max-ten": "^5.0.0",
-    "textlint-rule-no-doubled-conjunction": "^3.0.0",
-    "textlint-rule-no-doubled-conjunctive-particle-ga": "^3.0.0",
-    "textlint-rule-no-doubled-joshi": "^5.1.1",
-    "textlint-rule-no-dropping-the-ra": "^3.0.0",
-    "textlint-rule-no-mix-dearu-desumasu": "^6.0.4",
-    "textlint-rule-no-mixed-zenkaku-and-hankaku-alphabet": "^1.0.1",
-    "textlint-rule-preset-ja-spacing": "^2.4.3",
-    "textlint-rule-preset-ja-technical-writing": "^12.0.2"
+    "@proofdict/textlint-rule-proofdict": "3.1.2",
+    "@textlint-ja/textlint-rule-no-synonyms": "1.3.0",
+    "husky": "9.1.7",
+    "lint-staged": "16.2.3",
+    "markdown-link-check": "3.13.7",
+    "markdownlint-cli": "0.45.0",
+    "npm-package-json-lint": "9.0.0",
+    "prettier": "3.6.2",
+    "sudachi-synonyms-dictionary": "15.0.0",
+    "textlint": "15.2.2",
+    "textlint-filter-rule-comments": "1.2.2",
+    "textlint-rule-ja-hiragana-fukushi": "1.3.0",
+    "textlint-rule-ja-hiragana-hojodoushi": "1.1.0",
+    "textlint-rule-ja-hiragana-keishikimeishi": "1.1.0",
+    "textlint-rule-ja-no-abusage": "3.0.0",
+    "textlint-rule-ja-no-inappropriate-words": "2.0.0",
+    "textlint-rule-ja-no-mixed-period": "3.0.2",
+    "textlint-rule-ja-overlooked-typo": "0.0.1",
+    "textlint-rule-ja-space-around-code": "2.4.2",
+    "textlint-rule-max-ten": "5.0.0",
+    "textlint-rule-no-doubled-conjunction": "3.0.0",
+    "textlint-rule-no-doubled-conjunctive-particle-ga": "3.0.0",
+    "textlint-rule-no-doubled-joshi": "5.1.1",
+    "textlint-rule-no-dropping-the-ra": "3.0.0",
+    "textlint-rule-no-mix-dearu-desumasu": "6.0.4",
+    "textlint-rule-no-mixed-zenkaku-and-hankaku-alphabet": "1.0.1",
+    "textlint-rule-preset-ja-spacing": "2.4.3",
+    "textlint-rule-preset-ja-technical-writing": "12.0.2"
+  },
+  "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48",
+  "volta": {
+    "node": "24.13.0"
   }
 }
