@@ -3,7 +3,8 @@ title: "米政府押収の暗号資産約60億円に流出疑惑 - 過去の監�
 emoji: "💵"
 type: "idea" # tech: 技術記事 / idea: アイデア
 topics: []
-published: false
+published: true
+published_at: 2026-01-29 14:30
 publication_name: omakase
 ---
 
@@ -19,6 +20,8 @@ John 氏の父親は、米連邦保安官局（USMS）から押収暗号資産�
 複数回にわたる盗難があったにも関わらず、なぜ米政府は二度目以降の流出を防止できなかったのでしょうか。
 
 ウォレットの秘密鍵の管理が不十分だったことは言うまでもないのですが、過去の監査で指摘されていた USMS の押収暗号資産管理の統制不備に注目して深堀していきます。
+
+![サムネイル](/images/cmdss-usa-hacked/thumbnail.jpg)
 
 ## 2. USMS の管理が"統制として弱い"と監査で指摘されていた
 
