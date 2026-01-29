@@ -109,8 +109,8 @@ DOJ OIG が問題視したのはまさにここで、USMS が使っていたス�
 
 - <https://oig.justice.gov/sites/default/files/reports/22-082.pdf>
 - <https://www.gao.gov/assets/880/876451.pdf>
-- <https://blockworks.co/news/usms-coinbase-prime-contract-custody-trade-crypto?utm_source=chatgpt.com>
-- <https://www.coinbase.com/blog/u-s-marshals-service-chooses-coinbase-to-safeguard-trade-its-large-cap?utm_source=chatgpt.com>
-- <https://www.usaspending.gov/award/CONT_AWD_15M50024FA4400016_1544_15M50024DA4400010_1544?utm_source=chatgpt.com>
+- <https://blockworks.co/news/usms-coinbase-prime-contract-custody-trade-crypto>
+- <https://www.coinbase.com/blog/u-s-marshals-service-chooses-coinbase-to-safeguard-trade-its-large-cap>
+- <https://www.usaspending.gov/award/CONT_AWD_15M50024FA4400016_1544_15M50024DA4400010_1544>
 - <https://parameter.io/how-a-23-million-crypto-showoff-led-to-a-u-s-government-bust/>
 - <https://x.com/zachxbt/status/2015430549846777964>
