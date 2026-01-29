@@ -4,7 +4,6 @@ emoji: "💵"
 type: "idea" # tech: 技術記事 / idea: アイデア
 topics: []
 published: true
-published_at: 2026-01-29 14:30
 publication_name: omakase
 ---
 
